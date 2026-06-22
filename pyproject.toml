@@ -1,0 +1,23 @@
+[project]
+name = "benchmark-harness"
+version = "0.1.0"
+description = "Result-collection harness for the tempus.build CI benchmarks (reduces case-study runs to a comparison row)."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://tempus.build"
+Repository = "https://github.com/tempusbuild/benchmark"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.15.18",
+]
+
+[tool.uv]
+# Standalone scripts, not a distributable package: resolve dependencies only, never build this project.
+package = false

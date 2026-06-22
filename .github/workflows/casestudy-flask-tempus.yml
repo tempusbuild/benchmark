@@ -1,0 +1,22 @@
+name: casestudy-flask-tempus
+
+# Runs the flask case study on a tempus.build runner. Identical to casestudy-flask-github.yml apart
+# from the `runner` input. workflow_dispatch only: case studies are run deliberately (>=3x, recorded
+# with the upstream ref and date), and a fork PR must never run on a self-hosted runner.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  casestudy:
+    uses: ./.github/workflows/casestudy-flask.yml
+    permissions:
+      contents: read
+    with:
+      runner: tempus-ubuntu-24.04-4core
