@@ -33,7 +33,7 @@ not the spec.
 
 | Upstream | Pinned ref | Test command |
 | -------- | ---------- | ------------ |
-| [pallets/flask](https://github.com/pallets/flask) | v3.1.3 (`22d9247`) | `uv run --locked tox run -e py3.14` |
+| [django/django](https://github.com/django/django) | v5.2.9 (`c14b756`) | `python tests/runtests.py --parallel` |
 
 Pin records and runner details live in [`case-studies/projects/`](case-studies/projects/). To add
 a project, see [`case-studies/README.md`](case-studies/README.md).
@@ -44,9 +44,10 @@ a project, see [`case-studies/README.md`](case-studies/README.md).
 # run both caller workflows via workflow_dispatch (>=3x per runner), then:
 python scripts/case_study_collect.py \
     --repo tempusbuild/benchmark \
-    --ref 22d924701a6ae2e4cd01e9a15bbaf3946094af65 \
-    --tempus-workflow casestudy-flask-tempus.yml \
-    --github-workflow casestudy-flask-github.yml
+    --upstream django/django \
+    --ref c14b756185c88f7f2eb745ff061f3c221fea9de7 \
+    --tempus-workflow casestudy-django-tempus.yml \
+    --github-workflow casestudy-django-github.yml
 ```
 
 ## Methodology and results

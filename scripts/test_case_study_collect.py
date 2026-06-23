@@ -55,9 +55,9 @@ def test_render_comparison_has_both_rows_and_speedup() -> None:
         [_run("2026-06-19T00:00:00Z", "2026-06-19T00:04:00Z")],
     )
     out = render_comparison(
-        "pallets/flask", "22d924701a6ae2e4cd01e9a15bbaf3946094af65", github, tempus
+        "django/django", "c14b756185c88f7f2eb745ff061f3c221fea9de7", github, tempus
     )
-    assert "`pallets/flask`" in out
-    assert "`22d9247`" in out  # ref shortened
+    assert "`django/django`" in out
+    assert "`c14b756`" in out  # ref shortened
     assert "480s" in out and "240s" in out
     assert "2.00x" in out

@@ -15,12 +15,13 @@ lint:
 test:
     uv run pytest scripts/
 
-# Reduce the flask case study's runs into a comparison row, e.g.:
-#   just results-flask pallets/flask 22d924701a6ae2e4cd01e9a15bbaf3946094af65
+# Reduce the django case study's runs into a comparison row, e.g.:
+#   just results-django c14b756185c88f7f2eb745ff061f3c221fea9de7
 # One recipe per case study (the workflow filenames are study-specific).
-results-flask repo ref:
+results-django ref:
     uv run python scripts/case_study_collect.py \
-        --repo {{ repo }} \
+        --repo tempusbuild/benchmark \
+        --upstream django/django \
         --ref {{ ref }} \
-        --tempus-workflow casestudy-flask-tempus.yml \
-        --github-workflow casestudy-flask-github.yml
+        --tempus-workflow casestudy-django-tempus.yml \
+        --github-workflow casestudy-django-github.yml

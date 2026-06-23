@@ -1,0 +1,21 @@
+name: casestudy-django-github
+
+# Runs the django case study on a GitHub-hosted runner. Identical to casestudy-django-tempus.yml
+# apart from the `runner` input. workflow_dispatch only, to match the tempus caller.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  casestudy:
+    uses: ./.github/workflows/casestudy-django.yml
+    permissions:
+      contents: read
+    with:
+      runner: ubuntu-latest

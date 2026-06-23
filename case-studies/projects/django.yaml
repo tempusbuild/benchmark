@@ -1,0 +1,19 @@
+# Pin record for the django case study (documentation + attribution; the workflow files are the
+# source of truth). The case study fetches django at the pinned commit AT PIPELINE TIME and runs
+# its own test command — django's code is never stored in this repo.
+
+upstream:
+  repo: django/django
+  # Pinned commit: the case study is reproducible at this exact upstream state. Bump deliberately;
+  # every published number records this ref and the date it was run.
+  ref: c14b756185c88f7f2eb745ff061f3c221fea9de7 # v5.2.9
+  license: BSD-3-Clause
+
+# django's own test command: one comparable Linux leg (Python 3.14, SQLite, --parallel).
+# pip is used (django ships no uv lockfile). --parallel exercises all 4 vCPU.
+run: python tests/runtests.py --parallel
+
+workflows:
+  reusable: .github/workflows/casestudy-django.yml
+  tempus: .github/workflows/casestudy-django-tempus.yml
+  github: .github/workflows/casestudy-django-github.yml
