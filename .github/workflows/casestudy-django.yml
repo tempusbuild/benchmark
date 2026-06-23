@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: django/django
-          ref: c14b756185c88f7f2eb745ff061f3c221fea9de7 # v5.2.9
+          ref: ee93f65169c280c9ab3d2ce103dd478c96d05065 # v6.0.6
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:

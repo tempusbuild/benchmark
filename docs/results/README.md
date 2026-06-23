@@ -9,7 +9,8 @@ separately, upstream project pinned to a specific commit).
 
 1. Both caller workflows for a case study are run at least three times each, for each cache
    state (cold and warm), using `workflow_dispatch`.
-2. Wall-clock time is read from the GitHub API (`run_started_at` .. `updated_at`).
+2. Each run's job wall-clock is read from the GitHub Actions jobs API (`started_at` ..
+   `completed_at`), excluding run orchestration and queue time.
 3. The runs are reduced to a **median** per (case study, runner, cache state):
 
    ```bash

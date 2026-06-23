@@ -34,10 +34,14 @@ Both sides run Ubuntu 24.04 (`ubuntu-latest` currently maps to Ubuntu 24.04).
 
 ## What is measured
 
-The upstream project's own test command runs without modification. Timing comes from the workflow
-run's own start and end timestamps (`run_started_at` .. `updated_at`) via the GitHub API.
-`scripts/case_study_collect.py` reads those timestamps, takes the median, and renders a comparison
-row. Only measured runs are ever summarized — never estimates.
+The upstream project's own test command runs without modification. Timing is the **job's**
+wall-clock on the runner — its `started_at` .. `completed_at` from the GitHub Actions jobs API.
+Run-level timing (`run_started_at` .. `updated_at`) is deliberately not used: it also counts run
+orchestration (run record → job assignment) and finalization, which is platform overhead that
+differs between hosted and self-hosted runners and would bias the comparison. Queue time is
+excluded either way (`started_at` is post-assignment). `scripts/case_study_collect.py` reads each
+run's job timing, takes the median, and renders a comparison row. Only measured runs are ever
+summarized — never estimates.
 
 ## Median of at least three runs
 

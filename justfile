@@ -16,7 +16,7 @@ test:
     uv run pytest scripts/
 
 # Reduce the django case study's runs into a comparison row, e.g.:
-#   just results-django c14b756185c88f7f2eb745ff061f3c221fea9de7
+#   just results-django ee93f65169c280c9ab3d2ce103dd478c96d05065
 # One recipe per case study (the workflow filenames are study-specific).
 results-django ref:
     uv run python scripts/case_study_collect.py \
