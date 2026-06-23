@@ -2,11 +2,14 @@
 """Reduce a case study's workflow runs into a comparison row.
 
 A case study runs a real upstream project's own CI on two runners (tempus vs github) via two
-workflows that differ only in `runs-on:`. This reads the recent runs of each workflow from the
-GitHub API (via `gh`), takes the median wall-clock, and renders a Markdown comparison.
+workflows that differ only in `runs-on:`. This reads each workflow's recent runs from the GitHub
+API (via `gh`), takes the median job wall-clock, and renders a Markdown comparison.
 
-Timing comes from the run's own start/end (`run_started_at` .. `updated_at`) because the steps
-are upstream's — there is no in-workflow timer under our control.
+Timing is the JOB's own `started_at` .. `completed_at` (the Actions jobs API) — the wall-clock of
+the job on the runner. Run-level `run_started_at` .. `updated_at` is deliberately NOT used: it also
+counts run orchestration (run record -> job assignment) and finalization, which is GitHub
+infrastructure overhead, differs between hosted and self-hosted runners, and would bias the
+comparison. Queue time is excluded either way (`started_at` is post-assignment).
 
 Usage:
     case_study_collect.py --repo OWNER/REPO --upstream UPSTREAM/REPO --ref UPSTREAM_SHA \
@@ -27,23 +30,23 @@ from datetime import datetime
 from typing import TypedDict
 
 
-class WorkflowRun(TypedDict):
-    """The subset of a GitHub Actions run record this tool reads."""
+class JobTiming(TypedDict):
+    """One workflow run reduced to its single job's timing (GitHub Actions jobs API)."""
 
-    run_started_at: str
-    updated_at: str
-    conclusion: str | None  # null while a run is still in progress
+    started_at: str  # when the runner began the job (post-queue/assignment)
+    completed_at: str
+    conclusion: str | None  # null while the run is still in progress
 
 
-def run_wall_clock_seconds(run: WorkflowRun) -> float:
-    """Wall-clock of one workflow run: updated_at - run_started_at, in seconds."""
-    started = datetime.fromisoformat(run["run_started_at"])
-    ended = datetime.fromisoformat(run["updated_at"])
+def wall_clock_seconds(job: JobTiming) -> float:
+    """Wall-clock of the job on the runner: completed_at - started_at, in seconds."""
+    started = datetime.fromisoformat(job["started_at"])
+    ended = datetime.fromisoformat(job["completed_at"])
     return (ended - started).total_seconds()
 
 
-def successful(runs: list[WorkflowRun]) -> list[WorkflowRun]:
-    return [r for r in runs if r["conclusion"] == "success"]
+def successful(jobs: list[JobTiming]) -> list[JobTiming]:
+    return [j for j in jobs if j["conclusion"] == "success"]
 
 
 def median_seconds(values: list[float]) -> float:
@@ -60,10 +63,10 @@ class VariantResult:
     date: str  # ISO date of the most recent run
 
 
-def summarize(runner_label: str, runs: list[WorkflowRun]) -> VariantResult:
-    ok = successful(runs)
-    median = median_seconds([run_wall_clock_seconds(r) for r in ok])  # raises if empty
-    latest_date = max(r["run_started_at"] for r in ok)[:10]  # ok is non-empty here
+def summarize(runner_label: str, jobs: list[JobTiming]) -> VariantResult:
+    ok = successful(jobs)
+    median = median_seconds([wall_clock_seconds(j) for j in ok])  # raises if empty
+    latest_date = max(j["started_at"] for j in ok)[:10]  # ok is non-empty here
     return VariantResult(runner_label, len(ok), median, latest_date)
 
 
@@ -95,23 +98,46 @@ def render_comparison(
     return "\n".join([header, *rows]) + note
 
 
-def fetch_runs(repo: str, workflow_file: str, limit: int) -> list[WorkflowRun]:
+def _gh_json(*api_args: str) -> object:
+    """Run `gh api ARGS` and parse JSON stdout; exit cleanly (not a traceback) on failure."""
     try:
         proc = subprocess.run(
-            [
-                "gh",
-                "api",
-                f"repos/{repo}/actions/workflows/{workflow_file}/runs",
-                "--jq",
-                f".workflow_runs[:{limit}]",
-            ],
+            ["gh", "api", *api_args],
             capture_output=True,
             text=True,
             check=True,
         )
     except subprocess.CalledProcessError as exc:
-        sys.exit(f"gh api failed for {repo} / {workflow_file}: {exc.stderr.strip()}")
+        sys.exit(f"gh api {' '.join(api_args)} failed: {exc.stderr.strip()}")
     return json.loads(proc.stdout)
+
+
+def fetch_job_timings(repo: str, workflow_file: str, limit: int) -> list[JobTiming]:
+    """The `limit` most recent runs of a workflow, each reduced to its single job's timing.
+
+    Two API hops: the runs list gives run ids + conclusion; per run the jobs API gives the job's
+    started_at/completed_at (the runs list carries no job timing).
+    """
+    runs = _gh_json(
+        f"repos/{repo}/actions/workflows/{workflow_file}/runs",
+        "--jq",
+        f".workflow_runs[:{limit}] | map({{id, conclusion}})",
+    )
+    timings: list[JobTiming] = []
+    for run in runs:
+        job = _gh_json(
+            f"repos/{repo}/actions/runs/{run['id']}/jobs",
+            "--jq",
+            ".jobs[0] | {started_at, completed_at}",
+        )
+        timings.append(
+            {
+                "started_at": job["started_at"],
+                "completed_at": job["completed_at"],
+                "conclusion": run["conclusion"],
+            }
+        )
+    return timings
 
 
 def main() -> None:
@@ -140,11 +166,11 @@ def main() -> None:
 
     tempus = summarize(
         "tempus-ubuntu-24.04-4core",
-        fetch_runs(args.repo, args.tempus_workflow, args.limit),
+        fetch_job_timings(args.repo, args.tempus_workflow, args.limit),
     )
     github = summarize(
         "ubuntu-latest",
-        fetch_runs(args.repo, args.github_workflow, args.limit),
+        fetch_job_timings(args.repo, args.github_workflow, args.limit),
     )
     print(render_comparison(args.upstream, args.ref, github, tempus))
 

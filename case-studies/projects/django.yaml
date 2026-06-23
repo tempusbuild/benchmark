@@ -6,7 +6,7 @@ upstream:
   repo: django/django
   # Pinned commit: the case study is reproducible at this exact upstream state. Bump deliberately;
   # every published number records this ref and the date it was run.
-  ref: c14b756185c88f7f2eb745ff061f3c221fea9de7 # v5.2.9
+  ref: ee93f65169c280c9ab3d2ce103dd478c96d05065 # v6.0.6
   license: BSD-3-Clause
 
 # django's own test command: one comparable Linux leg (Python 3.14, SQLite, --parallel).

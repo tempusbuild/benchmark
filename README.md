@@ -33,7 +33,7 @@ not the spec.
 
 | Upstream | Pinned ref | Test command |
 | -------- | ---------- | ------------ |
-| [django/django](https://github.com/django/django) | v5.2.9 (`c14b756`) | `python tests/runtests.py --parallel` |
+| [django/django](https://github.com/django/django) | v6.0.6 (`ee93f65`) | `python tests/runtests.py --parallel` |
 
 Pin records and runner details live in [`case-studies/projects/`](case-studies/projects/). To add
 a project, see [`case-studies/README.md`](case-studies/README.md).
@@ -45,7 +45,7 @@ a project, see [`case-studies/README.md`](case-studies/README.md).
 python scripts/case_study_collect.py \
     --repo tempusbuild/benchmark \
     --upstream django/django \
-    --ref c14b756185c88f7f2eb745ff061f3c221fea9de7 \
+    --ref ee93f65169c280c9ab3d2ce103dd478c96d05065 \
     --tempus-workflow casestudy-django-tempus.yml \
     --github-workflow casestudy-django-github.yml
 ```
