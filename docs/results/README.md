@@ -15,9 +15,10 @@ separately, upstream project pinned to a specific commit).
    ```bash
    python scripts/case_study_collect.py \
        --repo tempusbuild/benchmark \
+       --upstream django/django \
        --ref <upstream-commit-sha> \
-       --tempus-workflow casestudy-flask-tempus.yml \
-       --github-workflow casestudy-flask-github.yml
+       --tempus-workflow casestudy-django-tempus.yml \
+       --github-workflow casestudy-django-github.yml
    ```
 
    This prints the Markdown rows that replace the table below.
@@ -31,8 +32,8 @@ measured medians, never estimates. There is one row per (upstream project, runne
 
 | Upstream | Ref | Runner | Runs | Median wall-clock | Cache | Date |
 | -------- | --- | ------ | ---- | ----------------- | ----- | ---- |
-| `pallets/flask` | — | `ubuntu-latest`             | — | — | cold | — |
-| `pallets/flask` | — | `tempus-ubuntu-24.04-4core` | — | — | cold | — |
+| `django/django` | — | `ubuntu-latest`             | — | — | cold | — |
+| `django/django` | — | `tempus-ubuntu-24.04-4core` | — | — | cold | — |
 
 (Warm-cache rows are added the same way, with `warm` in the Cache column. Cold and warm are never
 blended in a single row.)

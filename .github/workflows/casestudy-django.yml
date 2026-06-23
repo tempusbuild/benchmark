@@ -1,0 +1,40 @@
+name: casestudy-django
+
+# Real-OSS case study: django/django's own test command, run on both runners. django is fetched at
+# pipeline time at a pinned commit — its code is NOT stored in this repo. The job is reduced to one
+# comparable Linux leg (Python 3.14, SQLite, --parallel). The two thin callers
+# (casestudy-django-{tempus,github}.yml) differ only in the `runner` input, so the only variable
+# is the runner. See case-studies/README.md.
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: "runs-on label to benchmark"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  django:
+    name: django tests (${{ inputs.runner }})
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out django at the pinned commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: django/django
+          ref: c14b756185c88f7f2eb745ff061f3c221fea9de7 # v5.2.9
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.14"
+      # django's own test command at this pin. Uses pip (not uv) as django ships no uv lockfile.
+      # SQLite default — no DB service, no secrets. --parallel exercises all 4 vCPU.
+      # No action-level cache: this is the honest cold path (warm = a primed colocated proxy).
+      - name: Install django and test dependencies
+        run: python -m pip install -e . -r tests/requirements/py3.txt
+      - name: Run django's test suite
+        run: python tests/runtests.py --parallel

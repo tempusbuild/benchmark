@@ -9,15 +9,19 @@ Timing comes from the run's own start/end (`run_started_at` .. `updated_at`) bec
 are upstream's — there is no in-workflow timer under our control.
 
 Usage:
-    case_study_collect.py --repo OWNER/REPO --ref UPSTREAM_SHA \
-        --tempus-workflow casestudy-flask-tempus.yml \
-        --github-workflow casestudy-flask-github.yml [--limit 3]
+    case_study_collect.py --repo OWNER/REPO --upstream UPSTREAM/REPO --ref UPSTREAM_SHA \
+        --tempus-workflow casestudy-django-tempus.yml \
+        --github-workflow casestudy-django-github.yml [--limit 3]
+
+--repo hosts the Actions runs (this benchmark repo); --upstream is the real project the case
+study exercises (shown in the table); --ref is the pinned upstream commit those runs measured.
 """
 
 import argparse
 import json
 import statistics
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TypedDict
@@ -68,7 +72,7 @@ def _fmt(seconds: float) -> str:
 
 
 def render_comparison(
-    repo: str, ref: str, github: VariantResult, tempus: VariantResult
+    upstream: str, ref: str, github: VariantResult, tempus: VariantResult
 ) -> str:
     short_ref = ref[:7]
     header = (
@@ -76,9 +80,9 @@ def render_comparison(
         "| -------- | --- | ------ | ---- | ----------------- | ---- |"
     )
     rows = [
-        f"| `{repo}` | `{short_ref}` | `{github.label}` | {github.runs} | "
+        f"| `{upstream}` | `{short_ref}` | `{github.label}` | {github.runs} | "
         f"{_fmt(github.median_seconds)} | {github.date} |",
-        f"| `{repo}` | `{short_ref}` | `{tempus.label}` | {tempus.runs} | "
+        f"| `{upstream}` | `{short_ref}` | `{tempus.label}` | {tempus.runs} | "
         f"{_fmt(tempus.median_seconds)} | {tempus.date} |",
     ]
     speedup = (
@@ -92,18 +96,21 @@ def render_comparison(
 
 
 def fetch_runs(repo: str, workflow_file: str, limit: int) -> list[WorkflowRun]:
-    proc = subprocess.run(
-        [
-            "gh",
-            "api",
-            f"repos/{repo}/actions/workflows/{workflow_file}/runs",
-            "--jq",
-            f".workflow_runs[:{limit}]",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    try:
+        proc = subprocess.run(
+            [
+                "gh",
+                "api",
+                f"repos/{repo}/actions/workflows/{workflow_file}/runs",
+                "--jq",
+                f".workflow_runs[:{limit}]",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        sys.exit(f"gh api failed for {repo} / {workflow_file}: {exc.stderr.strip()}")
     return json.loads(proc.stdout)
 
 
@@ -115,9 +122,14 @@ def main() -> None:
         help="OWNER/REPO hosting the workflow runs (this benchmark repo)",
     )
     parser.add_argument(
+        "--upstream",
+        required=True,
+        help="OWNER/REPO of the real project the case study runs (shown in the table)",
+    )
+    parser.add_argument(
         "--ref",
         required=True,
-        help="pinned UPSTREAM commit the runs measured (e.g. the flask sha)",
+        help="pinned UPSTREAM commit the runs measured (e.g. the django sha)",
     )
     parser.add_argument("--tempus-workflow", required=True)
     parser.add_argument("--github-workflow", required=True)
@@ -134,7 +146,7 @@ def main() -> None:
         "ubuntu-latest",
         fetch_runs(args.repo, args.github_workflow, args.limit),
     )
-    print(render_comparison(args.repo, args.ref, github, tempus))
+    print(render_comparison(args.upstream, args.ref, github, tempus))
 
 
 if __name__ == "__main__":

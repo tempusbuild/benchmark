@@ -9,28 +9,30 @@ workflows differ **only** in `runs-on:`. The upstream project's steps are unchan
 The upstream project's code is **not stored in this repo**. Each case-study run checks the project
 out at a **pinned commit** at pipeline time and runs its own test command. What we commit is only:
 
-- two thin caller workflows + one reusable workflow (e.g. `casestudy-flask*.yml`), and
+- two thin caller workflows + one reusable workflow (e.g. `casestudy-django*.yml`), and
 - a pin record under [`projects/`](projects/) (upstream repo, commit, licence, command).
 
 So there is no mirror repo and no third-party code in our git — only a workflow that says "check
-out `pallets/flask@<sha>` and run `uv run --locked tox run -e py3.14`".
+out `django/django@<sha>` and run `python tests/runtests.py --parallel`".
 
-## How it works (flask example)
+## How it works (django example)
 
 ```text
-.github/workflows/casestudy-flask.yml          reusable: checkout flask @pinned sha → its test cmd
-        ├── casestudy-flask-tempus.yml          runner: tempus-ubuntu-24.04-4core
-        └── casestudy-flask-github.yml          runner: ubuntu-latest
+.github/workflows/casestudy-django.yml          reusable: checkout django @pinned sha → its test cmd
+        ├── casestudy-django-tempus.yml          runner: tempus-ubuntu-24.04-4core
+        └── casestudy-django-github.yml          runner: ubuntu-latest
 
 run both (workflow_dispatch) >=3x per runner
         │
-        ▼  scripts/case_study_collect.py --repo <this-benchmark-repo> --ref <flask-sha> \
-               --tempus-workflow casestudy-flask-tempus.yml --github-workflow casestudy-flask-github.yml
+        ▼  scripts/case_study_collect.py --repo tempusbuild/benchmark --upstream django/django \
+               --ref <django-sha> \
+               --tempus-workflow casestudy-django-tempus.yml --github-workflow casestudy-django-github.yml
         ▼  median wall-clock per runner (from the GitHub API) → comparison row
 ```
 
 `--repo` is the repo whose Actions runs are read (this benchmark repo, where the case-study
-workflows live); `--ref` is the pinned **upstream** flask commit those runs measured.
+workflows live); `--upstream` is the real project the case study exercises (shown in the table);
+`--ref` is the pinned upstream django commit those runs measured.
 
 ## What stays honest
 
@@ -63,5 +65,5 @@ upstream project.
 
 Good candidates have a permissive licence, a test command that runs on `ubuntu-latest` without
 secrets or external services, and a suite that completes in minutes on a single 4 vCPU leg. Copy
-the three `casestudy-flask*.yml` workflows and [`projects/flask.yaml`](projects/flask.yaml), set
+the three `casestudy-django*.yml` workflows and [`projects/django.yaml`](projects/django.yaml), set
 the upstream repo, the pinned commit, and the project's own one-leg test command.
