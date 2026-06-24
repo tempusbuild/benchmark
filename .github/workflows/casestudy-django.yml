@@ -31,10 +31,16 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.14"
-      # django's own test command at this pin. Uses pip (not uv) as django ships no uv lockfile.
-      # SQLite default — no DB service, no secrets. --parallel exercises all 4 vCPU.
-      # No action-level cache: this is the honest cold path (warm = a primed colocated proxy).
+      # django's own Linux CI steps (their .github/workflows/python_matrix.yml): install
+      # libmemcached-dev (pylibmc has no wheels for Python 3.12+ and the runner images don't bundle
+      # the headers, so django installs them itself), upgrade packaging tools, install the test
+      # dependencies, run runtests.py on SQLite. Identical on both runners; no action-level cache
+      # is enabled — the honest cold path (warm = a primed colocated proxy, set up by the operator).
+      - name: Install libmemcached-dev for pylibmc
+        run: sudo apt-get update && sudo apt-get install -y libmemcached-dev
       - name: Install django and test dependencies
-        run: python -m pip install -e . -r tests/requirements/py3.txt
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install -r tests/requirements/py3.txt -e .
       - name: Run django's test suite
-        run: python tests/runtests.py --parallel
+        run: python -Wall tests/runtests.py -v2

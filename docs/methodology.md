@@ -53,14 +53,23 @@ recorded alongside every published number.
 ## Cold cache vs warm cache
 
 Dependency download and resolution dominates many CI runs, and caching changes the picture
-substantially. Cold and warm runs are therefore reported **separately**, never blended:
+substantially. Cold and warm runs are reported **separately**, never blended.
 
-- **Cold cache** — no pre-populated dependency cache; everything is fetched fresh. This is the
-  worst case and the most honest baseline. The reusable workflow does not enable any action-level
-  cache, so the default path is cold.
-- **Warm cache** — dependencies are served from a primed cache. This reflects steady-state CI on
-  a project that runs frequently. For tempus.build runners this means the colocated proxy has
-  already been populated; for the GitHub side an equivalent primed state is set up by the operator.
+The reusable workflow is **cache-neutral** — it enables no action-level cache — so it stays
+identical across runners and any caching is purely each platform's own. Cold and warm are
+controlled outside the workflow:
+
+- **Cold — the canonical, headline comparison.** No caches primed on either side; everything is
+  fetched fresh. The GitHub-hosted side is cold by construction (no action-level cache, so packages
+  come from upstream every run); the self-hosted side has its transparent dependency cache cleared
+  before each cold run (otherwise a prior run leaves it warm). With neither side caching, the number
+  isolates the runner itself — CPU, I/O, network — which is the most defensible apples-to-apples
+  baseline, and the one published as the headline.
+- **Warm — steady-state, reported separately and labelled.** Each platform uses its own native
+  caching, primed: the self-hosted side's transparent dependency cache populated, the GitHub side
+  with its action-level cache primed. This reflects repeat CI on a frequently-run project. The
+  caching mechanisms differ per platform, so a warm row is always labelled as warm and never
+  compared against a cold one.
 
 A "speedup" claim must state which cache state it refers to. Comparing tempus warm against GitHub
 cold (or vice versa) is not a valid comparison and is not published.
